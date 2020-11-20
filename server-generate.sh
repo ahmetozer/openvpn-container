@@ -1,7 +1,12 @@
 #!/bin/bash
 
+###                        ###
+# ? OpenVPN config generator #
+# ?  https://ahmetozer.org   #
+###                        ###
+
 ###                   ###
-#   Preset variables    #
+#  * Preset variables    #
 ###                   ###
 
 port_regex="^((6553[0-5])|(655[0-2][0-9])|(65[0-4][0-9]{2})|(6[0-4][0-9]{3})|([1-5][0-9]{4})|([1-9][0-9]{3})|([1-9][0-9]{2})|([1-9][0-9])|([1-9]))$"
@@ -14,7 +19,6 @@ netmask=${netmask-255.255.255.0}
 
 ip6_block=${ip6_block-"fdac:900d:c0ff:ee::/64"}
 
-
 echo "Config dir $server_config_dir"
 mkdir -pv $server_config_dir/oneconfig
 if [ -f $server_config_dir/env ]; then
@@ -22,22 +26,26 @@ if [ -f $server_config_dir/env ]; then
     exit 0
 fi
 
-DATE=`date`
-
-if [[ ! "$ip_block" =~ $ip_regex ]]
+openvpn_bin=`command -v openvpn`
+if [ ! $? -eq 0 ]
 then
+  echo "ERR: OpenVPN is not found" >&2
+  exit 1
+fi
+
+DATE=$(date)
+
+if [[ ! "$ip_block" =~ $ip_regex ]]; then
     echo "Your ip block is not right $ip_block"
     exit 1
 fi
 
-if [[ ! "$netmask" =~ $ip_regex ]]
-then
+if [[ ! "$netmask" =~ $ip_regex ]]; then
     echo "Your netmask is not right $netmask"
     exit 1
 fi
 
-if [[ ! "$ip6_block" =~ $ip6_regex ]]
-then
+if [[ ! "$ip6_block" =~ $ip6_regex ]]; then
     echo "Your IPv6 block or range is not right $ip6_block"
     exit 1
 fi
@@ -62,7 +70,6 @@ until [[ "$protocol" =~ "^tcp$|^udp$" ]]; do
     esac
 done
 echo "Protocol $protocol"
-
 
 until [[ "$port" =~ $port_regex ]]; do
 
@@ -141,7 +148,11 @@ done
 echo "DNS 2 $dns2"
 
 touch $server_config_dir/env
-echo "DATE=$DATE" > $server_config_dir/env
+echo "DATE=\"$DATE\"" >$server_config_dir/env
+
+echo "ip_block=$ip_block" >>$server_config_dir/env
+echo "netmask=$netmask" >>$server_config_dir/env
+echo "ip6_block=$ip6_block" >>$server_config_dir/env
 
 # Write dh.pem
 # ? https://ssl-config.mozilla.org/ffdhe2048.txt
@@ -168,11 +179,11 @@ echo "EASYRSA_CRL_DAYS ${EASYRSA_CRL_DAYS-3650}"
 ./easyrsa gen-crl
 cp pki/ca.crt pki/private/ca.key pki/issued/server.crt pki/private/server.key pki/crl.pem $server_config_dir
 chmod o+x $server_config_dir/
-openvpn --genkey --secret $server_config_dir/tc.key
+$openvpn_bin --genkey --secret $server_config_dir/tc.key
 # ? trap - ERR #! Reset the trap
 ls -lah $server_config_dir/
 
-echo "protocol=$protocol" >> $server_config_dir/env
+echo "protocol=$protocol" >>$server_config_dir/env
 echo "port=$port" >>$server_config_dir/env
 echo "dns1=$dns1" >>$server_config_dir/env
 echo "dns2=$dns2" >>$server_config_dir/env
@@ -257,3 +268,10 @@ echo "</crl-verify>" >>$server_config_dir/oneconfig/server.conf
 echo "<tls-crypt>" >>$server_config_dir/oneconfig/server.conf
 cat $server_config_dir/tc.key >>$server_config_dir/oneconfig/server.conf
 echo "</tls-crypt>" >>$server_config_dir/oneconfig/server.conf
+
+echo "###       ###
+#   Environment Variables
+#   These variables useful for startup scripts
+###     ###" >>$server_config_dir/oneconfig/server.conf
+# Turn into comment
+cat $server_config_dir/env | sed -e 's/^/##env#-#/' >>$server_config_dir/oneconfig/server.conf
