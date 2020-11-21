@@ -10,12 +10,18 @@
 ###                   ###
 
 port_regex="^((6553[0-5])|(655[0-2][0-9])|(65[0-4][0-9]{2})|(6[0-4][0-9]{3})|([1-5][0-9]{4})|([1-9][0-9]{3})|([1-9][0-9]{2})|([1-9][0-9])|([1-9]))$"
-ip_regex="^(((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(\.|$)){4})"
+ip_regex="^(((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(\.|$)){3})(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(\/([0-9]$|[1-2][0-9]$|3[0-2])|$)"
 ip6_regex="^(([0-9a-fA-F]{1,4}:){7,7}[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,7}:|([0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,5}(:[0-9a-fA-F]{1,4}){1,2}|([0-9a-fA-F]{1,4}:){1,4}(:[0-9a-fA-F]{1,4}){1,3}|([0-9a-fA-F]{1,4}:){1,3}(:[0-9a-fA-F]{1,4}){1,4}|([0-9a-fA-F]{1,4}:){1,2}(:[0-9a-fA-F]{1,4}){1,5}|[0-9a-fA-F]{1,4}:((:[0-9a-fA-F]{1,4}){1,6})|:((:[0-9a-fA-F]{1,4}){1,7}|:)|fe80:(:[0-9a-fA-F]{0,4}){0,4}%[0-9a-zA-Z]{1,}|::(ffff(:0{1,4}){0,1}:){0,1}((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])|([0-9a-fA-F]{1,4}:){1,4}:((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9]))(/[1-9][0-9])?$"
 server_config_dir=${server_config_dir-/etc/openvpn/server}
 
-ip_block=${ip_block-10.0.1.0}
-netmask=${netmask-255.255.255.0}
+cidr_netmask_array=("0.0.0.0" "128.0.0.0" "192.0.0.0" "224.0.0.0" "240.0.0.0" "248.0.0.0" "252.0.0.0" "254.0.0.0" "255.0.0.0"
+ "255.128.0.0" "255.192.0.0" "255.224.0.0" "255.240.0.0" "255.248.0.0" "255.252.0.0" "255.254.0.0" "255.255.0.0"
+ "255.255.128.0" "255.255.192.0" "255.255.224.0" "255.255.240.0" "255.255.248.0" "255.255.252.0" "255.255.254.0"
+ "255.255.255.0" "255.255.255.128" "255.255.255.192" "255.255.255.224" "255.255.255.240" "255.255.255.248" "255.255.255.252"
+ "255.255.255.254" "255.255.255.255"
+)
+ip_block_cidr=${ip_block_cidr-10.0.1.0}
+
 
 ip6_block=${ip6_block-"fdac:900d:c0ff:ee::/64"}
 
@@ -35,11 +41,19 @@ fi
 
 DATE=$(date)
 
-if [[ ! "$ip_block" =~ $ip_regex ]]; then
-    echo "Your ip block is not right $ip_block"
+if [[ ! "$ip_block_cidr" =~ $ip_regex ]]; then
+    echo "Your ip block is not right $ip_block_cidr"
     exit 1
 fi
+ip_block=`echo $ip_block | cut -d'/' -f1`
+cidr=`echo $ip_block_cidr | cut -d'/' -f2`
 
+#if ! (( cidr >= 0 && cidr <= 32)); then
+if [[ ! "$cidr" =~ "([0-9]$|[1-2][0-9]$|3[0-2])" ]]; then
+  cidr="24"
+fi
+
+netmask=${cidr_netmask_array[$cidr]}
 if [[ ! "$netmask" =~ $ip_regex ]]; then
     echo "Your netmask is not right $netmask"
     exit 1
@@ -147,12 +161,20 @@ until [[ "$dns2" =~ $ip_regex ]] || [[ "$dns2" =~ $ip6_regex ]]; do
 done
 echo "DNS 2 $dns2"
 
+
+ip_nat=${ip_nat-yes}
+ip6_nat=${ip6_nat-yes}
+
 touch $server_config_dir/env
 echo "DATE=\"$DATE\"" >$server_config_dir/env
 
 echo "ip_block=$ip_block" >>$server_config_dir/env
+echo "cidr=$cidr" >>$server_config_dir/env
 echo "netmask=$netmask" >>$server_config_dir/env
 echo "ip6_block=$ip6_block" >>$server_config_dir/env
+
+echo "ip_nat=$ip_nat" >>$server_config_dir/env
+echo "ip6_nat=$ip6_nat" >>$server_config_dir/env
 
 # Write dh.pem
 # ? https://ssl-config.mozilla.org/ffdhe2048.txt
@@ -214,7 +236,7 @@ verb ${verb-0}
 
 
 keepalive 10 120
-server 10.8.0.0 255.255.255.0
+server $ip_block ${netmask}
 #push \"redirect-gateway def1 bypass-dhcp\"
 push \"redirect-gateway def1 ipv6 bypass-dhcp\"
 
