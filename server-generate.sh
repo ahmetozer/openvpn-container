@@ -15,13 +15,12 @@ ip6_regex="^(([0-9a-fA-F]{1,4}:){7,7}[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,7}:|
 server_config_dir=${server_config_dir-/etc/openvpn/server}
 
 cidr_netmask_array=("0.0.0.0" "128.0.0.0" "192.0.0.0" "224.0.0.0" "240.0.0.0" "248.0.0.0" "252.0.0.0" "254.0.0.0" "255.0.0.0"
- "255.128.0.0" "255.192.0.0" "255.224.0.0" "255.240.0.0" "255.248.0.0" "255.252.0.0" "255.254.0.0" "255.255.0.0"
- "255.255.128.0" "255.255.192.0" "255.255.224.0" "255.255.240.0" "255.255.248.0" "255.255.252.0" "255.255.254.0"
- "255.255.255.0" "255.255.255.128" "255.255.255.192" "255.255.255.224" "255.255.255.240" "255.255.255.248" "255.255.255.252"
- "255.255.255.254" "255.255.255.255"
+    "255.128.0.0" "255.192.0.0" "255.224.0.0" "255.240.0.0" "255.248.0.0" "255.252.0.0" "255.254.0.0" "255.255.0.0"
+    "255.255.128.0" "255.255.192.0" "255.255.224.0" "255.255.240.0" "255.255.248.0" "255.255.252.0" "255.255.254.0"
+    "255.255.255.0" "255.255.255.128" "255.255.255.192" "255.255.255.224" "255.255.255.240" "255.255.255.248" "255.255.255.252"
+    "255.255.255.254" "255.255.255.255"
 )
 ip_block_cidr=${ip_block_cidr-10.0.1.0}
-
 
 ip6_block=${ip6_block-"fdac:900d:c0ff:ee::/64"}
 
@@ -32,25 +31,29 @@ if [ -f $server_config_dir/env ]; then
     exit 0
 fi
 
-openvpn_bin=`command -v openvpn`
-if [ ! $? -eq 0 ]
-then
-  echo "ERR: OpenVPN is not found" >&2
-  exit 1
+openvpn_bin=$(command -v openvpn)
+if [ ! $? -eq 0 ]; then
+    echo "ERR: OpenVPN is not found" >&2
+    exit 1
 fi
 
 DATE=$(date)
 
 if [[ ! "$ip_block_cidr" =~ $ip_regex ]]; then
-    echo "Your ip block is not right $ip_block_cidr"
+    echo "Your ip block is not right $ip_block_cidr."
     exit 1
 fi
-ip_block=`echo $ip_block | cut -d'/' -f1`
-cidr=`echo $ip_block_cidr | cut -d'/' -f2`
+ip_block=$(echo $ip_block_cidr | cut -d'/' -f1)
+
+if [[ ! "$ip_block" =~ $ip_regex ]]; then
+    echo "Your ip block is not right $ip_block"
+    exit 1
+fi
+cidr=$(echo $ip_block_cidr | cut -d'/' -f2)
 
 #if ! (( cidr >= 0 && cidr <= 32)); then
 if [[ ! "$cidr" =~ "([0-9]$|[1-2][0-9]$|3[0-2])" ]]; then
-  cidr="24"
+    cidr="24"
 fi
 
 netmask=${cidr_netmask_array[$cidr]}
@@ -161,7 +164,6 @@ until [[ "$dns2" =~ $ip_regex ]] || [[ "$dns2" =~ $ip6_regex ]]; do
 done
 echo "DNS 2 $dns2"
 
-
 ip_nat=${ip_nat-yes}
 ip6_nat=${ip6_nat-yes}
 
@@ -209,6 +211,8 @@ echo "protocol=$protocol" >>$server_config_dir/env
 echo "port=$port" >>$server_config_dir/env
 echo "dns1=$dns1" >>$server_config_dir/env
 echo "dns2=$dns2" >>$server_config_dir/env
+echo "dev_type=$dev_type" >>$server_config_dir/env
+echo "verb=$verb" >>$server_config_dir/env
 
 echo "EASYRSA_CERT_EXPIRE=${EASYRSA_CERT_EXPIRE-3650}" >>$server_config_dir/env
 echo "EASYRSA_CRL_DAYS=${EASYRSA_CRL_DAYS-3650}" >>$server_config_dir/env
@@ -236,7 +240,8 @@ verb ${verb-0}
 
 
 keepalive 10 120
-server $ip_block ${netmask}
+server ${ip_block} ${netmask}
+server-ipv6 ${ip6_block}
 #push \"redirect-gateway def1 bypass-dhcp\"
 push \"redirect-gateway def1 ipv6 bypass-dhcp\"
 
