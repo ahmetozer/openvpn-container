@@ -222,6 +222,7 @@ echo "###   ###
 # Date $DATE
 # Source https://github.com/ahmetozer/openvpn-config-generator-container
 
+local ::
 port $port
 proto $protocol
 #dev vpn1
