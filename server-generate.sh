@@ -1,10 +1,11 @@
 #!/bin/bash
 
+echo "
 ###                        ###
 # ? OpenVPN config generator #
 # ?  https://ahmetozer.org   #
 ###                        ###
-
+"
 ###                   ###
 #  * Preset variables    #
 ###                   ###
@@ -20,9 +21,16 @@ cidr_netmask_array=("0.0.0.0" "128.0.0.0" "192.0.0.0" "224.0.0.0" "240.0.0.0" "2
     "255.255.255.0" "255.255.255.128" "255.255.255.192" "255.255.255.224" "255.255.255.240" "255.255.255.248" "255.255.255.252"
     "255.255.255.254" "255.255.255.255"
 )
-ip_block_cidr=${ip_block_cidr-10.0.1.0}
+ip_block_cidr=${ip_block-10.0.1.0}
 
 ip6_block=${ip6_block-"fdac:900d:c0ff:ee::/64"}
+echo "Detecting Ip adresses"
+printf "Ip ..."
+server_ip4=${server_ip-$(wget -T 3 -t 2 -q4O- cloudflare.com/cdn-cgi/tracert | grep "ip=" | cut -d"=" -f2)}
+echo " ... $server_ip4"
+printf "Ipv6 ..."
+server_ip6=${server_ip6-$(wget -T 3 -t 2 -q6O- cloudflare.com/cdn-cgi/tracert | grep "ip=" | cut -d"=" -f2)}
+echo " ... $server_ip6"
 
 echo "Config dir $server_config_dir"
 mkdir -pv $server_config_dir/oneconfig
@@ -67,6 +75,27 @@ if [[ ! "$ip6_block" =~ $ip6_regex ]]; then
     exit 1
 fi
 
+until [[ $has_a_ip ]]; do
+    echo "Define your server IP address"
+    if [ "$fast_install" == 'true' ]; then
+        if [ -z "$server_ip" ]; then
+            server_ip="$server_ip6 $server_ip4"
+        fi
+    else
+        read -p "Auto detected Ip address > " -e -i "$server_ip6 $server_ip4" server_ip
+    fi
+    server_ip_array=($server_ip)
+    for i in "${server_ip_array[@]}"; do
+        if [[ "$i" =~ $ip_regex ]] || [[ "$i" =~ $ip6_regex ]]; then
+            echo "Server Ip = '$i'"
+            has_a_ip=true
+        else
+            echo "Wrong Ip adress '$i'"
+            exit 1
+        fi
+    done
+done
+
 until [[ "$protocol" =~ "^tcp$|^udp$" ]]; do
     echo "UDP can have a faster and lower latency connection, but some companies block UDP."
     if [ "$fast_install" == 'true' ] && [ -z "$protocol" ]; then
@@ -86,6 +115,7 @@ until [[ "$protocol" =~ "^tcp$|^udp$" ]]; do
     *) echo "Please type 'tcp' or 'udp'." ;;
     esac
 done
+
 echo "Protocol $protocol"
 
 until [[ "$port" =~ $port_regex ]]; do
@@ -177,6 +207,8 @@ echo "ip6_block=$ip6_block" >>$server_config_dir/env
 
 echo "ip_nat=$ip_nat" >>$server_config_dir/env
 echo "ip6_nat=$ip6_nat" >>$server_config_dir/env
+echo "server_ip=\"$server_ip\"" >>$server_config_dir/env
+echo "server_ip6=$server_ip6" >>$server_config_dir/env
 
 # Write dh.pem
 # ? https://ssl-config.mozilla.org/ffdhe2048.txt
@@ -205,8 +237,12 @@ cp pki/ca.crt pki/private/ca.key pki/issued/server.crt pki/private/server.key pk
 chmod o+x $server_config_dir/
 $openvpn_bin --genkey --secret $server_config_dir/tc.key
 # ? trap - ERR #! Reset the trap
-ls -lah $server_config_dir/
+##ls -lah $server_config_dir/
 
+verb=${verb-0}
+echo "
+        Envoriment variables are saving...
+"
 echo "protocol=$protocol" >>$server_config_dir/env
 echo "port=$port" >>$server_config_dir/env
 echo "dns1=$dns1" >>$server_config_dir/env
@@ -237,7 +273,7 @@ group nobody
 persist-key
 persist-tun
 status ${openvpn_status_log_loc-/dev/null} #? Log location. Default openvpn-status.log
-verb ${verb-0}
+verb ${verb}
 
 
 keepalive 10 120
@@ -271,6 +307,29 @@ auth SHA512
 tls-crypt tc.key
 " >>$server_config_dir/server.conf
 
+printf "
+        Checking generated files ... "
+required_conf_files=("ca.crt" "server.crt" "server.key" "dh.pem" "crl.pem" "tc.key" "server.conf" "env")
+
+for file in ${required_conf_files[*]}; do
+    if [ ! -f $server_config_dir/$file ]; then
+        echo "File $server_config_dir/$file not found"
+        err_on_exit=yes
+    fi
+done
+unset required_conf_files
+
+if [ "$err_on_exit" == "yes" ]; then
+    exit
+else
+    echo "ok"
+fi
+
+echo "
+        Classic configuration is done
+        Creating oneconfig/server.sh
+"
+
 # * Embed certifaces to server.conf to more easy transfer configuration
 
 echo "<ca>" >>$server_config_dir/oneconfig/server.conf
@@ -303,3 +362,11 @@ echo "###       ###
 ###     ###" >>$server_config_dir/oneconfig/server.conf
 # Turn into comment
 cat $server_config_dir/env | sed -e 's/^/##env#-#/' >>$server_config_dir/oneconfig/server.conf
+
+echo "
+        ###     ###     ###     ###     ###     ###     ###
+
+        Server Certificate and Config generations are done ...
+
+        ###     ###     ###     ###     ###     ###     ###
+"

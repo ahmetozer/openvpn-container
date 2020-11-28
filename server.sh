@@ -1,9 +1,11 @@
 #!/bin/bash
 
-###                     ###
-# OpenVPN server starter  #
-#   https://ahmetozer.org #
-###                     ###
+echo "
+###                       ###
+# ? OpenVPN server starter  #
+# ?                         #
+###                       ###
+"
 
 server_config_dir=${server_config_dir-/etc/openvpn/server}
 
@@ -28,12 +30,11 @@ else
         fi
     done
     openvpn_config_file="$server_config_dir/server.conf"
+    if [ "$err_on_exit" == "yes" ]; then
+        exit
+    fi
     source /etc/openvpn/server/env
     cd $server_config_dir
-fi
-
-if [ "$err_on_exit" == "yes" ]; then
-    exit
 fi
 
 openvpn_bin=$(command -v openvpn)
