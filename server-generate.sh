@@ -240,6 +240,8 @@ $openvpn_bin --genkey --secret $server_config_dir/tc.key
 ##ls -lah $server_config_dir/
 
 verb=${verb-0}
+cipher=${cipher-"AES-256-CBC"}
+auth=${auth-"SHA512"}
 echo "
         Envoriment variables are saving...
 "
@@ -249,6 +251,8 @@ echo "dns1=$dns1" >>$server_config_dir/env
 echo "dns2=$dns2" >>$server_config_dir/env
 echo "dev_type=$dev_type" >>$server_config_dir/env
 echo "verb=$verb" >>$server_config_dir/env
+echo "cipher=$cipher" >>$server_config_dir/env
+echo "auth=$auth" >>$server_config_dir/env
 
 echo "EASYRSA_CERT_EXPIRE=${EASYRSA_CERT_EXPIRE-3650}" >>$server_config_dir/env
 echo "EASYRSA_CRL_DAYS=${EASYRSA_CRL_DAYS-3650}" >>$server_config_dir/env
@@ -267,14 +271,16 @@ dev $dev_type
 
 topology subnet
 
-cipher AES-256-CBC
+#data-ciphers $cipher   # Version =>2.5
+cipher $cipher         # Version < 2.4
+auth $auth
+
 user nobody
 group nobody
 persist-key
 persist-tun
-status ${openvpn_status_log_loc-/dev/null} #? Log location. Default openvpn-status.log
+#status ${openvpn_status_log_loc-/dev/null} #? Log location. Default openvpn-status.log
 verb ${verb}
-
 
 keepalive 10 120
 server ${ip_block} ${netmask}
@@ -290,6 +296,7 @@ if [[ "$protocol" = "udp" ]]; then
     echo "sndbuf 300000
 rcvbuf 300000
 #fast-io
+#client-to-client
 explicit-exit-notify" >>$server_config_dir/server.conf
 fi
 
@@ -303,7 +310,6 @@ cert server.crt
 key server.key
 dh dh.pem
 crl-verify crl.pem
-auth SHA512
 tls-crypt tc.key
 " >>$server_config_dir/server.conf
 
