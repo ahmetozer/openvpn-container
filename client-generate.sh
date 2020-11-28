@@ -4,7 +4,13 @@ echo -e "\n\n\tOpenVPN Client Generator\n\n"
 
 server_config_dir=${server_config_dir-/etc/openvpn/server}
 
-source $server_config_dir/env
+if [ -f "$server_config_dir/env" ]; then
+	source $server_config_dir/env
+else
+	echo "ERR: Env file is not found"
+	exit 1
+fi
+
 DATE=$(date)
 mkdir -vp "$server_config_dir/clients/"
 
@@ -57,7 +63,13 @@ REMOTE_ADDR() {
 	server_ip_array=($server_ip)
 	for i in "${server_ip_array[@]}"; do
 		if [[ "$i" =~ $ip_regex ]] || [[ "$i" =~ $ip6_regex ]]; then
-			echo "remote $i $port"
+			echo "
+<connection>
+remote $i $port
+connect-retry 1
+connect-timeout 5
+</connection>
+"
 			has_a_ip=true
 		else
 			echo "ERR. Unexpected IP type. Wrong Ip adress is '$i'"
@@ -91,16 +103,18 @@ dev $dev_type
 proto $protocol
 $(REMOTE_ADDR)
 resolv-retry infinite
+connect-retry-max infinite
 nobind
 persist-key
 persist-tun
 remote-cert-tls server
-auth SHA512
-cipher AES-256-CBC
+auth $auth		
+cipher $cipher				# Version <= 2.4
+#cipher-data-fallback $cipher	# Version => 2.5
 ignore-unknown-option block-outside-dns
 block-outside-dns
 verb $verb
-
+auth-nocache
 ### Certs ###
 "
 }
@@ -141,11 +155,15 @@ OVPN_GENERATE >"$server_config_dir/clients/$client.ovpn"
 echo "Configuration file is created at \"$server_config_dir/clients/$client.ovpn\""
 
 if [ "$fast_install" == 'true' ]; then
+	echo -e "\n\n"
 	cat $server_config_dir/clients/$client.ovpn
+	echo -e "\n\n"
 else
 	read -p "Do you want to print client configuration ? > " -e -i "yes" question
 	if [ "$question" == "yes" ]; then
+		echo -e "\n\n"
 		cat $server_config_dir/clients/$client.ovpn
+		echo -e "\n\n"
 		unset question
 	fi
 fi
