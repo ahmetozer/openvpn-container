@@ -23,6 +23,13 @@ cidr_netmask_array=("0.0.0.0" "128.0.0.0" "192.0.0.0" "224.0.0.0" "240.0.0.0" "2
 )
 ip_block_cidr=${ip_block-10.0.1.0}
 
+echo "Config dir $server_config_dir"
+mkdir -pv $server_config_dir/oneconfig
+if [ -f $server_config_dir/env ]; then
+    echo "Server is already configured and installed"
+    exit 0
+fi
+
 ip6_block=${ip6_block-"fdac:900d:c0ff:ee::/64"}
 echo "Detecting Ip adresses"
 printf "Ip ..."
@@ -32,12 +39,7 @@ printf "Ipv6 ..."
 server_ip6=${server_ip6-$(wget -T 3 -t 2 -q6O- cloudflare.com/cdn-cgi/tracert | grep "ip=" | cut -d"=" -f2)}
 echo " ... $server_ip6"
 
-echo "Config dir $server_config_dir"
-mkdir -pv $server_config_dir/oneconfig
-if [ -f $server_config_dir/env ]; then
-    echo "Server is already configured and installed"
-    exit 0
-fi
+
 
 openvpn_bin=$(command -v openvpn)
 if [ ! $? -eq 0 ]; then

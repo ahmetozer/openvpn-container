@@ -6,7 +6,7 @@ echo "
 "
 first_pwd=$PWD
 
-client_config=${client_config_dir-client1.ovpn}
+client_config=${client_config-client1.ovpn}
 
 client_config_basename=$(basename $client_config)
 client_config_dirname=$(dirname $client_config)
@@ -35,7 +35,7 @@ if [ -f "$client_config" ]; then
         echo "ERR: OpenVPN is not found" >&2
         exit 1
     fi
-    openvpn_bin $client_config
+    $openvpn_bin $client_config
 else
 
     client_config_basename=$(basename $client_config)

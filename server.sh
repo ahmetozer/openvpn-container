@@ -31,7 +31,7 @@ else
     done
     openvpn_config_file="$server_config_dir/server.conf"
     if [ "$err_on_exit" == "yes" ]; then
-        exit
+        exit 1
     fi
     source /etc/openvpn/server/env
     cd $server_config_dir
