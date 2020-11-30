@@ -39,8 +39,6 @@ printf "Ipv6 ..."
 server_ip6=${server_ip6-$(wget -T 3 -t 2 -q6O- cloudflare.com/cdn-cgi/tracert | grep "ip=" | cut -d"=" -f2)}
 echo " ... $server_ip6"
 
-
-
 openvpn_bin=$(command -v openvpn)
 if [ ! $? -eq 0 ]; then
     echo "ERR: OpenVPN is not found" >&2
@@ -102,8 +100,11 @@ until [[ "$protocol" =~ "^tcp$|^udp$" ]]; do
     echo "UDP can have a faster and lower latency connection, but some companies block UDP."
     if [ "$fast_install" == 'true' ] && [ -z "$protocol" ]; then
         protocol='tcp'
+    elif [ "$fast_install" == 'true' ]; then
+        echo "Protocol is setted by hand = $protocol"
     else
-        read -p "What protocol do you want to use for VPN? (TCP/UDP) > " -e -i "tcp" protocol
+        protocol=${protocol-"tcp"}
+        read -p "What protocol do you want to use for VPN? (TCP/UDP) > " -e -i "$protocol" protocol
     fi
     case $protocol in
     [TCPtcp]*)
@@ -114,7 +115,12 @@ until [[ "$protocol" =~ "^tcp$|^udp$" ]]; do
         protocol='udp'
         break
         ;;
-    *) echo "Please type 'tcp' or 'udp'." ;;
+    *) if [ "$fast_install" == 'true' ]; then
+        echo "ERR: Protocol '$protocol' is not valid protocol."
+        exit 1
+    else
+        echo "Please type 'tcp' or 'udp'."
+    fi ;;
     esac
 done
 
@@ -123,18 +129,27 @@ echo "Protocol $protocol"
 until [[ "$port" =~ $port_regex ]]; do
 
     if [ "$fast_install" == 'true' ] && [ -z "$port" ]; then
-        port=443
+        port='443'
+    elif [ "$fast_install" == 'true' ]; then
+        echo "Port is setted by hand = $port"
     else
-        read -p "What port number do you want to use for VPN ? (suggested 443) > " -e -i "443" port
+        port=${port-"443"}
+        read -p "What port number do you want to use for VPN ? (suggested 443) > " -e -i "$port" port
     fi
 
     if ! [[ "$port" =~ ^[0-9]+$ ]]; then
         echo "Only Number accepted."
+        if [ "$fast_install" == 'true' ]; then
+            exit 1
+        fi
     else
         if [ "$port" -ge 1 -a "$port" -le 65535 ]; then
             if [ "$porttype" == "tcp" ]; then
                 if (lsof -i :$port | grep TCP); then
                     echo "Port already usage. Please select another port."
+                    if [ "$fast_install" == 'true' ]; then
+                        exit 1
+                    fi
                 else
                     echo "Selected port $port/tcp"
                     break
@@ -144,6 +159,9 @@ until [[ "$port" =~ $port_regex ]]; do
             if [ "$porttype" == "udp" ]; then
                 if (lsof -i :$port | grep UDP); then
                     echo "Port already usage. Please select another port."
+                    if [ "$fast_install" == 'true' ]; then
+                        exit 1
+                    fi
                 else
                     echo "Selected port $port/udp"
                     break
@@ -151,6 +169,9 @@ until [[ "$port" =~ $port_regex ]]; do
             fi
         else
             echo "Please select a number between 1 and 65535 for the port."
+            if [ "$fast_install" == 'true' ]; then
+                exit 1
+            fi
         fi
     fi
 done
@@ -159,8 +180,11 @@ echo "Port $port"
 until [[ "$dev_type" =~ "^tun$|^tap$" ]]; do
     if [ "$fast_install" == 'true' ] && [ -z "$dev_type" ]; then
         dev_type='tun'
+    elif [ "$fast_install" == 'true' ]; then
+        echo "Device type is setted by hand = $dev_type"
     else
-        read -p "What device type is do you want to use for VPN ? (tun/tap) > " -e -i "tun" dev_type
+        dev_type=${dev_type-"tun"}
+        read -p "What device type is do you want to use for VPN ? (tun/tap) > " -e -i "$dev_type" dev_type
     fi
     case $dev_type in
     [TUNtun]*)
@@ -171,29 +195,46 @@ until [[ "$dev_type" =~ "^tun$|^tap$" ]]; do
         dev_type='tap'
         break
         ;;
-    *) echo "Please type 'tun' or 'tap'." ;;
+    *) if [ "$fast_install" == 'true' ]; then
+        echo "ERR: Device type '$dev_type' is not valid type."
+        exit 1
+    else
+        echo "Please type 'tun' or 'tap'."
+    fi ;;
+
     esac
 done
 echo "Device type $dev_type"
 
+loop_detect=0
 until [[ "$dns1" =~ $ip_regex ]] || [[ "$dns1" =~ $ip6_regex ]]; do
-
-    if [ "$fast_install" == 'true' ] && [ -z "$dns1" ]; then
-        dns1="1.1.1.1"
+    if [ $loop_detect -gt 0 ]; then
+        echo "ERR dns1 = '$dns1' is not valid IPv4 or IPv6 address"
+        exit 1
+    fi
+    dns1=${dns1-"1.1.1.1"}
+    if [ "$fast_install" != 'true' ]; then
+        read -p "Write a primary dns server > " -e -i "$dns1" dns1
     else
-        read -p "Write a dns server one > " -e -i "1.1.1.1" dns1
+        loop_detect=$((loop_detect + 1))
     fi
 done
 echo "DNS 1 $dns1"
 
+loop_detect=0
 until [[ "$dns2" =~ $ip_regex ]] || [[ "$dns2" =~ $ip6_regex ]]; do
-
-    if [ "$fast_install" == 'true' ] && [ -z "$dns2" ]; then
-        dns2="8.8.4.4"
+    if [ $loop_detect -gt 0 ]; then
+        echo "ERR dns2 = '$dns2' is not valid IPv4 or IPv6 address"
+        exit 1
+    fi
+    dns2=${dns2-"8.8.4.4"}
+    if [ "$fast_install" != 'true' ] ;then
+        read -p "Write a secondary dns server > " -e -i "$dns2" dns2
     else
-        read -p "Write a dns server two > " -e -i "8.8.4.4" dns2
+        loop_detect=$((loop_detect + 1))
     fi
 done
+
 echo "DNS 2 $dns2"
 
 ip_nat=${ip_nat-yes}
