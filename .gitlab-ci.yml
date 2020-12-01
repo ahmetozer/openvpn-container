@@ -1,12 +1,20 @@
-docker-build:
-    variables:
-      buildx: "yes"
-    image: ahmetozer/dind:latest
-    stage: build
-    before_script:
-      - /src/start-docker.sh
-      - docker login -u "ahmetozer" -p "$dhub"
-    script:
-      - docker buildx build --platform linux/amd64,linux/arm64,linux/arm --push -t ahmetozer/openvpn .
-    only:
-      - master
+image: ahmetozer/dind:latest
+
+variables:
+  DOCKER_HOST: tcp://docker:2375/
+  DOCKER_DRIVER: overlay2
+  buildx: "yes"
+
+services:
+  - docker:dind
+
+build:
+  stage: build
+  before_script:
+    - docker login -u "ahmetozer" -p "$dhub"
+  script:
+    - docker buildx create --use
+    - docker run --rm --privileged docker/binfmt:820fdd95a9972a5308930a2bdfb8573dd4447ad3
+    - docker buildx build --platform linux/amd64,linux/arm64,linux/arm --push -t ahmetozer/openvpn .
+  only:
+    - master
