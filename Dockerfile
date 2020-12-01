@@ -8,4 +8,4 @@ wget -qO- "https://github.com/OpenVPN/easy-rsa/releases/download/v3.0.8/EasyRSA-
 chown -R root:root /easy-rsa/ && \
 chmod +x *.sh
 
-CMD /openvpn/entrypoint.sh
+ENTRYPOINT ["/openvpn/entrypoint.sh"]

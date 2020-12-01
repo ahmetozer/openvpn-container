@@ -3,15 +3,30 @@
 #   http://ahmetozer.org   #
 ###                      ###
 
+Avaible_Modes=("server" "server-generate" "client-generate" "client")
+
 if [ -t 0 ]; then
     echo 'TTY is enabled'
 else
     echo 'TTY is not enabled,
 No input is presentable so fast_install mode is enabled'
-    fast_install=true
+    export fast_install=true
 fi
 
-Avaible_Modes=("server" "server-generate" "client-generate" "client")
+if [ ! -z "$1" ]; then
+    for modes in ${Avaible_Modes[*]}; do
+        if [ "$1" == "$modes" ]; then
+            mode="$1"
+        fi
+    done
+    if [ -z "$mode" ]; then
+        echo "$1 is not mode, trying to execute as command"
+        command $@
+        exit
+    fi
+
+fi
+
 if [ -z "$mode" ]; then
     echo 'Mode is not presented.
 System try to figure out mode.
@@ -33,7 +48,7 @@ Please select one of them '${Avaible_Modes[*]}'"
             echo "ERR: Mode '$mode' is exited with err $exit_code" >&2
             exit 1
         fi
-        exit 
+        exit
     fi
 fi
 
