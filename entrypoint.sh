@@ -33,6 +33,7 @@ Please select one of them '${Avaible_Modes[*]}'"
             echo "ERR: Mode '$mode' is exited with err $exit_code" >&2
             exit 1
         fi
+        exit 
     fi
 fi
 

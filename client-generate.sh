@@ -161,6 +161,7 @@ if [ "$fast_install" == 'true' ]; then
 	echo -e "\n\n"
 	cat $server_config_dir/clients/$client_tmp.ovpn
 	echo -e "\n\n"
+	exit
 else
 	read -p "Do you want to print client configuration ? > " -e -i "yes" question
 	if [ "$question" == "yes" ]; then
@@ -169,4 +170,5 @@ else
 		echo -e "\n\n"
 		unset question
 	fi
+	exit 
 fi
