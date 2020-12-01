@@ -36,7 +36,6 @@ Please select one of them '${Avaible_Modes[*]}'"
     fi
 fi
 
-
 find_client_config() {
     client_config_extension=("ovpn" "conf")
     for ext in ${client_config_extension[*]}; do
@@ -84,6 +83,7 @@ I am creating server config file, client1.ovpn file and run created openvpn serv
 fi
 case $mode in
 server-generate)
+    mode="server-generate"
     ./server-generate.sh
     exit_code=$?
     if [ ! $exit_code -eq 0 ]; then
@@ -92,6 +92,7 @@ server-generate)
     fi
     ;&
 client-generate)
+    mode="client-generate"
     ./client-generate.sh
     exit_code=$?
     if [ ! $exit_code -eq 0 ]; then
@@ -100,6 +101,7 @@ client-generate)
     fi
     ;&
 server)
+    mode="server"
     ./server.sh
     exit_code=$?
     if [ ! $exit_code -eq 0 ]; then
@@ -109,6 +111,7 @@ server)
     ;;
 
 client)
+    mode="client"
     ./client.sh
     exit_code=$?
     if [ ! $exit_code -eq 0 ]; then

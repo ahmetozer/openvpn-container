@@ -267,16 +267,18 @@ ssbzSibBsu/6iGtCOGEoXJf//////////wIBAg==
 current_dir=$PWD
 echo "Creating Server Certifaces"
 # ? trap 'capture err' ERR
-cd $server_config_dir/easy-rsa/
+#EASYRSA="/easy-rsa/"
+#cd $server_config_dir/pki/
+echo EASYRSA="/easy-rsa/" EASYRSA_PKI="$server_config_dir/pki" /easy-rsa/easyrsa
 
 echo "EASYRSA_CERT_EXPIRE ${EASYRSA_CERT_EXPIRE-3650}"
 echo "EASYRSA_CRL_DAYS ${EASYRSA_CRL_DAYS-3650}"
 
-./easyrsa init-pki
-./easyrsa --batch build-ca nopass
-./easyrsa build-server-full server nopass
-./easyrsa gen-crl
-cp pki/ca.crt pki/private/ca.key pki/issued/server.crt pki/private/server.key pki/crl.pem $server_config_dir
+EASYRSA="/easy-rsa/" EASYRSA_PKI="$server_config_dir/pki" /easy-rsa/easyrsa init-pki
+EASYRSA="/easy-rsa/" EASYRSA_PKI="$server_config_dir/pki" /easy-rsa/easyrsa --batch build-ca nopass
+EASYRSA="/easy-rsa/" EASYRSA_PKI="$server_config_dir/pki" /easy-rsa/easyrsa build-server-full server nopass
+EASYRSA="/easy-rsa/" EASYRSA_PKI="$server_config_dir/pki" /easy-rsa/easyrsa gen-crl
+cp $server_config_dir/pki/ca.crt $server_config_dir/pki/private/ca.key $server_config_dir/pki/issued/server.crt $server_config_dir/pki/private/server.key $server_config_dir/pki/crl.pem $server_config_dir
 chmod o+x $server_config_dir/
 $openvpn_bin --genkey --secret $server_config_dir/tc.key
 # ? trap - ERR #! Reset the trap
