@@ -37,6 +37,7 @@ if [ -f "$client_config" ]; then
         echo "ERR: OpenVPN is not found" >&2
         exit 1
     fi
+    cd $client_config_dirname
     $openvpn_bin $client_config
 else
 

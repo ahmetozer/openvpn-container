@@ -111,6 +111,6 @@ $IP6TABLES_BIN -I FORWARD -m state --state RELATED,ESTABLISHED -j ACCEPT
 
 echo "Starting OpenVPN"
 trap restore_iptables EXIT
-cd $server_config_dir
+cd $(dirname $openvpn_config_file)
 $openvpn_bin $openvpn_config_file
 cd $first_pwd
