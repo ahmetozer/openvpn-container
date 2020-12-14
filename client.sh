@@ -37,8 +37,11 @@ if [ -f "$client_config" ]; then
         echo "ERR: OpenVPN is not found" >&2
         exit 1
     fi
+    current_disable_ipv6=$(cat /proc/sys/net/ipv6/conf/all/disable_ipv6)
+    echo 0 >/proc/sys/net/ipv6/conf/all/disable_ipv6
     cd $client_config_dirname
     $openvpn_bin $client_config
+    echo $current_disable_ipv6 >/proc/sys/net/ipv6/conf/all/disable_ipv6
 else
 
     client_config_basename=$(basename $client_config)
