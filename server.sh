@@ -7,7 +7,7 @@ echo "
 ###                       ###
 "
 
-server_config_dir=${server_config_dir-/etc/openvpn/server}
+server_config_dir=${server_config_dir-/server}
 
 first_pwd=$PWD
 
@@ -15,9 +15,9 @@ echo "Looking OneConfig File"
 if [ -f "$server_config_dir/oneconfig/server.conf" ]; then
     echo "OneConfig found"
     echo "Extracting environment variables"
-    cat "$server_config_dir/oneconfig/server.conf" | grep "##env#-#" | sed -e 's!##env#-#!!' >/etc/openvpn/server/env
+    cat "$server_config_dir/oneconfig/server.conf" | grep "##env#-#" | sed -e 's!##env#-#!!' >/server/env
     echo "Loading environment variables"
-    source /etc/openvpn/server/env
+    source /server/env
     openvpn_config_file="$server_config_dir/oneconfig/server.conf"
 else
     echo "OneConfig is not found. Script will be continue with regular config."
@@ -33,7 +33,7 @@ else
     if [ "$err_on_exit" == "yes" ]; then
         exit 1
     fi
-    source /etc/openvpn/server/env
+    source /server/env
     cd $server_config_dir
 fi
 

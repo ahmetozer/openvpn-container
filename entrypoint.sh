@@ -55,7 +55,7 @@ fi
 find_client_config() {
     client_config_extension=("ovpn" "conf")
     for ext in ${client_config_extension[*]}; do
-        for file in /etc/openvpn/client/*."$ext"; do
+        for file in /client/*."$ext"; do
             if [ -f "$file" ]; then
                 echo "I found client config file and selecting '$file'" # If it does what you want, remove the echo
                 export client_config=$file
@@ -75,11 +75,11 @@ if [ ! -z "$client_config" ] && [ -z "$mode" ]; then
     echo "Client config location is presented"
     mode="client"
 else
-    if [ -f /etc/openvpn/client/client1.ovpn ]; then
+    if [ -f /client/client1.ovpn ]; then
         echo "Default client config found. Mode is client"
         mode="client"
     fi
-    server_config_dir=${server_config_dir-/etc/openvpn/server}
+    server_config_dir=${server_config_dir-/server}
 
     if [ -f "$server_config_dir/oneconfig/server.conf" ] && [ -z "$mode" ]; then
         echo "Oneconfig is found. Mode is server"

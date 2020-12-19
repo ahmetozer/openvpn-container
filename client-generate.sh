@@ -2,7 +2,7 @@
 
 echo -e "\n\n\tOpenVPN Client Generator\n\n"
 
-server_config_dir=${server_config_dir-/etc/openvpn/server}
+server_config_dir=${server_config_dir-/server}
 
 if [ -f "$server_config_dir/env" ]; then
 	source $server_config_dir/env

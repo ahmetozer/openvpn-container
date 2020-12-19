@@ -14,8 +14,8 @@ client_config_basename=$(basename $client_config)
 client_config_dirname=$(dirname $client_config)
 
 if [ "$client_config_basename" == "$client_config" ]; then
-    echo "Selecting Default Directory '/etc/openvpn/client/' "
-    client_config_dirname="/etc/openvpn/client"
+    echo "Selecting Default Directory '/client/' "
+    client_config_dirname="/client"
 fi
 
 if [ "$client_config_basename" == "" ]; then
