@@ -23,7 +23,7 @@ All environment variables has a default define. Some variables (like IPv4 and IP
 If you want to change default environment variables, you can just define in your system.
 
 ```bash
-docker run -it -e ip_block="192.168.3.0/24" ahmetozer/openvpn
+docker run -it -e ip_block="192.168.3.0/24" ghcr.io/ahmetozer/openvpn-container
 ```
 
 Environment variables with predefined default values which is used in this system.
@@ -73,7 +73,7 @@ You can use `--rm` flag to create one time container. If you want use as a servi
 In example case configuration files are stored on `/data/vpn`. You can change this with your own directory. Server generate mode only generate server configuration files which are required for openvpn server and generate first client configuration file.
 
 ```bash
-docker run -it --rm -v /data/vpn:/server -e mode="server-generate" ahmetozer/openvpn
+docker run -it --rm -v /data/vpn:/server -e mode="server-generate" ghcr.io/ahmetozer/openvpn-container
 ```
 
 Also you can define environment variables in docker run and bypass questions with enabling fast mode.
@@ -82,15 +82,15 @@ Non defined variables are use [default configurations](https://github.com/ahmeto
 > **NOTE:** If you run with non terminal mode, program set `fast_install=true` by default due to no way to giving input and prevent stuck in cloud systems.
 
 ```bash
-docker run -it --rm -v /data/vpn:/server -e mode="server-generate" -e port=53 -e protocol=udp -e fast_install=true  ahmetozer/openvpn
+docker run -it --rm -v /data/vpn:/server -e mode="server-generate" -e port=53 -e protocol=udp -e fast_install=true  ghcr.io/ahmetozer/openvpn-container
 #or
-docker run -i --rm -v /data/vpn:/server -e mode="server-generate" -e port=53 -e protocol=udp ahmetozer/openvpn
+docker run -i --rm -v /data/vpn:/server -e mode="server-generate" -e port=53 -e protocol=udp ghcr.io/ahmetozer/openvpn-container
 ```
 
 You can run container without defining mode, system firstly create server configuration files then create first client configuration and finally start the openvpn server.
 
 ```bash
-docker run -it --rm -v /data/vpn:/server -e port=70 -e protocol=tcp -p 70:70 --privileged ahmetozer/openvpn
+docker run -it --rm -v /data/vpn:/server -e port=70 -e protocol=tcp -p 70:70 --privileged ghcr.io/ahmetozer/openvpn-container
 ```
 
 ### Client Certificate Generation
@@ -101,13 +101,13 @@ The output in your server will be on /data/vpn/clients/$client_name.ovpn
 If client name are note defined, system use "client" word with client count "client1"
 
 ```bash
-docker run -it --rm -v /data/vpn:/server -e mode="client-generate" ahmetozer/openvpn
+docker run -it --rm -v /data/vpn:/server -e mode="client-generate" ghcr.io/ahmetozer/openvpn-container
 ```
 
 You can also set client name without reading from terminal
 
 ```bash
-docker run -i --rm -v /data/vpn:/server -e mode="client-generate" -e client=john  ahmetozer/openvpn
+docker run -i --rm -v /data/vpn:/server -e mode="client-generate" -e client=john  ghcr.io/ahmetozer/openvpn-container
 ```
 
 ### Server mode
@@ -115,13 +115,13 @@ docker run -i --rm -v /data/vpn:/server -e mode="client-generate" -e client=john
 In this example server configuration files are stored under '/data/vpn' you can replace with your own directory.
 
 ```bash
-docker run -i --rm --privileged -v /data/vpn:/server -e mode="server" ahmetozer/openvpn
+docker run -i --rm --privileged -v /data/vpn:/server -e mode="server" ghcr.io/ahmetozer/openvpn-container
 ```
 
 If you want to use `oneconfig` server.conf, you have to bind server.conf into into `/server/oneconfig` directory.
 
 ```bash
-docker run -i --rm --privileged -v /data/vpn:/server/oneconfig/ -e mode="server" ahmetozer/openvpn
+docker run -i --rm --privileged -v /data/vpn:/server/oneconfig/ -e mode="server" ghcr.io/ahmetozer/openvpn-container
 ```
 
 > **NOTE**: `--privileged` argument is required for managing VPN interface and firewall rules. If you don't want to run server mode with privilege, replace `--privileged` flag with  `--cap-add=NET_ADMIN --sysctl net.ipv4.ip_forward=1 --sysctl net.ipv6.conf.all.forwarding=1 --sysctl net.ipv6.conf.all.disable_ipv6=0`
@@ -132,7 +132,7 @@ System looks `/client` directory in container to find client configuration file 
 If you not define client_name in enviroment variable script firstly looks `/client/client1.ovpn` file, if this is also not avaible, system try to find any `ovpn|conf` file to picking up.
 
 ```bash
-docker run -i --rm --privileged -v /data/vpn/clients:/client -e mode="client" ahmetozer/openvpn
+docker run -i --rm --privileged -v /data/vpn/clients:/client -e mode="client" ghcr.io/ahmetozer/openvpn-container
 ```
 
 > **NOTE**: "--privileged" argument is required for managing VPN interface and sysctl rules. If you don't want to run client mode with privilege, replace `--privileged` flag with  `--cap-add=NET_ADMIN --sysctl net.ipv6.conf.all.disable_ipv6=0`
@@ -143,43 +143,43 @@ docker run -i --rm --privileged -v /data/vpn/clients:/client -e mode="client" ah
 Your client configuration file is under /data/vpn/clients/client1.ovpn
 
 ```bash
-docker run -it --rm --privileged -v /data/vpn:/server ahmetozer/openvpn
+docker run -it --rm --privileged -v /data/vpn:/server ghcr.io/ahmetozer/openvpn-container
 ```
 
 - Create server, generate first client config and run openvpn server without asking any user input.
 
 ```bash
-docker run --rm --privileged -e fast_install=true -v /data/vpn:/server ahmetozer/openvpn
+docker run --rm --privileged -e fast_install=true -v /data/vpn:/server ghcr.io/ahmetozer/openvpn-container
 ```
 
 - Create server with custom port.
 
 ```bash
-docker run -i  --rm --privileged -e port=22 -v /data/vpn:/server ahmetozer/openvpn
+docker run -i  --rm --privileged -e port=22 -v /data/vpn:/server ghcr.io/ahmetozer/openvpn-container
 ```
 
 - For tap mode, define dev_type as tap
 
 ```bash
-docker run -it -e dev_type=tap --rm --privileged -v /data/vpn:/server ahmetozer/openvpn
+docker run -it -e dev_type=tap --rm --privileged -v /data/vpn:/server ghcr.io/ahmetozer/openvpn-container
 ```
 
 - Generate new client configuration file, system automatically recommend a new client name and you can also write own name.
 
 ```bash
-docker run -it --rm --privileged -v/data/vpn:/server ahmetozer/openvpn client-generate
+docker run -it --rm --privileged -v/data/vpn:/server ghcr.io/ahmetozer/openvpn-container client-generate
 ```
 
 - Fastly create client configuration without asking any input.
 
 ```bash
-docker run -it -e fast_install=true --rm --privileged -e client="john" -e mode="client-generate" -v/data/vpn:/server ahmetozer/openvpn
+docker run -it -e fast_install=true --rm --privileged -e client="john" -e mode="client-generate" -v/data/vpn:/server ghcr.io/ahmetozer/openvpn-container
 ```
 
 - Run OpenVPN server
 
 ```bash
-docker run -i --rm --privileged -v/data/vpn:/server ahmetozer/openvpn server
+docker run -i --rm --privileged -v/data/vpn:/server ghcr.io/ahmetozer/openvpn-container server
 ```
 
 - Give native IPv6 access to Clients Without NAT66
@@ -189,13 +189,13 @@ If your server has a IPv6 connectivity you can run OpenVPN in host network with 
 #If your IPv6 block is not routed, server as neighbor discovery, you have to reply neighbor discovery questions generated from router. Mostly required on all VPS providers
 docker run -it --restart always --cap-add NET_ADMIN --cap-add NET_RAW --network host ahmetozer/ndppd
 # Generate OpenVPN server configuration with dedicated IPV6 addr. Replace 2001:900d:c0ff:ee:1 with your range
-docker run -i --rm --privileged -v/data/vpn:/server --network host -e ip6_block="2001:900d:c0ff:ee:1::/80" -e ip6_nat=no ahmetozer/openvpn server-generate
-docker run -i --rm --privileged -v/data/vpn:/server --network host ahmetozer/openvpn server
+docker run -i --rm --privileged -v/data/vpn:/server --network host -e ip6_block="2001:900d:c0ff:ee:1::/80" -e ip6_nat=no ghcr.io/ahmetozer/openvpn-container server-generate
+docker run -i --rm --privileged -v/data/vpn:/server --network host ghcr.io/ahmetozer/openvpn-container server
 ```
 
 - If you have single IPv6 and you don't want to enable IPv6 support in docker, just run in host network and system make a NAT66
 
 ```bash
-docker run -i --rm --privileged -v/data/vpn:/server --network host ahmetozer/openvpn server-generate
-docker run -i --rm --privileged -v/data/vpn:/server --network host ahmetozer/openvpn server
+docker run -i --rm --privileged -v/data/vpn:/server --network host ghcr.io/ahmetozer/openvpn-container server-generate
+docker run -i --rm --privileged -v/data/vpn:/server --network host ghcr.io/ahmetozer/openvpn-container server
 ```
