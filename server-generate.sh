@@ -82,7 +82,11 @@ until [[ $has_a_ip ]]; do
             server_ip="$server_ip6 $server_ip4"
         fi
     else
-        read -p "Auto detected Ip address > " -e -i "$server_ip6 $server_ip4" server_ip
+        if [ -z "$server_ip" ]; then
+            read -p "Given Ip address > " -e -i "$server_ip" server_ip
+        else
+            read -p "Auto detected Ip address > " -e -i "$server_ip6 $server_ip4" server_ip
+        fi
     fi
     server_ip_array=($server_ip)
     for i in "${server_ip_array[@]}"; do
@@ -228,7 +232,7 @@ until [[ "$dns2" =~ $ip_regex ]] || [[ "$dns2" =~ $ip6_regex ]]; do
         exit 1
     fi
     dns2=${dns2-"8.8.4.4"}
-    if [ "$fast_install" != 'true' ] ;then
+    if [ "$fast_install" != 'true' ]; then
         read -p "Write a secondary dns server > " -e -i "$dns2" dns2
     else
         loop_detect=$((loop_detect + 1))
